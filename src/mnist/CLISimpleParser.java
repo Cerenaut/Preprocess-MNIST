@@ -27,12 +27,78 @@ import java.util.regex.Pattern;
  * Date:        30/3/17
  */
 
+/**
+ * Provides basic parsing and validation functionality for CLI (command-line interface) input arguments.
+ * It is capable of parsing/validating input arguments in their short-form (e.g. -r), or long-form (e.g. --randomise)
+ * and return the parsed values in a Map&lt;String, String&gt;.
+ *
+ * <p>
+ *    In order to use this class, it should be initialised by a list of {@link mnist.CLISimpleParser.ArgumentEntry}
+ *    representing the expected input arguments. After initialisation, the method {@link mnist.CLISimpleParser#parse(String[] input_args)}
+ *    can be used to parse the given input string into a Map of parsed arguments. Input parameter <code>input_args</code>
+ *    is usually the exact variable given into the Main method at startup.
+ * </p>
+ *
+ *
+ *
+ * <p>
+ *
+ *    Both argument name and its value are validated. The argument's value validation is delegated to
+ *    {@link mnist.CLISimpleParser.ArgumentEntry} class,
+ *    but the argument's name is validated based on the following rules:
+ *
+ * </p>
+ *
+ * <ul>
+ *     <li>
+ *         Short-form arguments must start with a single "-" immediately followed by only one character.
+ *
+ *                 <p style="margin-left: 20px; font-style:italic">
+ *                     example:
+ *                     <br>
+ *                         <code>
+ *                             valid short-form arguments: -r  -p   -x
+ *                         </code>
+ *
+ *                         <br>
+ *
+ *                         <code>
+ *                              invalid short-form arguments: -xx -% --t
+ *                         </code>
+ *                 </p>
+ *
+ *     </li>
+ *     <li>
+ *         Long-form arguments must start with double "-" immediately followed by more that one character.
+ *         <br>
+ *             <p style="margin-left: 20px; font-style:italic">
+ *                     example:
+ *                     <br>
+ *                         <code>
+ *                             valid long-form arguments: --randomise  --number   -x
+ *                         </code>
+ *
+ *                         <br>
+ *
+ *                         <code>
+ *                              invalid short-form arguments: -randomise --r --#@
+ *                         </code>
+ *                 </p>
+ *     </li>
+ * </ul>
+ *
+ */
+
 public class CLISimpleParser {
 
     private Map<String, String> parsedArguments;
     private List<ArgumentEntry> argumentEntries;
     private boolean alreadyParsed = false;
 
+    /**
+     * Initialises the class with a list of {@link mnist.CLISimpleParser.ArgumentEntry} as registered input arguments
+     * @param argumentEntries {@link mnist.CLISimpleParser.ArgumentEntry} to be registered
+     */
     public CLISimpleParser(List<ArgumentEntry> argumentEntries){
 
         parsedArguments = new HashMap<>();
@@ -40,8 +106,17 @@ public class CLISimpleParser {
 
     }
 
-
+    /**
+     * Transforms the input argument array (same as given to the Main method at the startup) into a Map&lt;String, String&gt;
+     * of key/values
+     * @param programArguments Input String array to be parsed
+     * @return parsed argument/value
+     * @throws Exception in case the input cannot be parsed, or the parsed argument does not match registered {@link mnist.CLISimpleParser.ArgumentEntry} list.
+     */
     public Map<String, String> parse(String[] programArguments) throws Exception{
+
+        //TODO: throwing specific exceptions based on a particular error condition instead of general Exception
+
 
         //being lazy and just return a cached calculated value
         if(alreadyParsed){
@@ -190,6 +265,12 @@ public class CLISimpleParser {
         return parsedArguments;
     }
 
+
+    /**
+     * This class represents individual input argument and encapsulates expected properties of each one. It also defines
+     * validation rules for a particular argument.
+     */
+
     public static class ArgumentEntry {
         private String            shortName;
         private String            longName;
@@ -228,6 +309,18 @@ public class CLISimpleParser {
             return validationPredicate.test(args);
         }
 
+        /**
+         * Creates new instance of {@link mnist.CLISimpleParser.ArgumentEntry}
+         * @param shortName short-form name of the argument
+         * @param longName long-form name of the argument
+         * @param description argument description. This message is used upon showing help message, or creating error message
+         *                    in case of failed validation
+         * @param isOptional determines whether the argument is optional or mandatory
+         * @param isFlag determines whether the argument is a flag type, i.e. it is used as an indicator with no values
+         *               associated to it
+         * @param defaultValue default value for the argument
+         * @param validationPredicate validation rules for argument
+         */
         public ArgumentEntry(String shortName, String longName, String description, boolean isOptional, boolean isFlag, String defaultValue, Predicate<String> validationPredicate){
             this.shortName           = shortName;
             this.longName            = longName;

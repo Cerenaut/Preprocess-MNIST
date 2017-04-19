@@ -4,10 +4,10 @@ Code to convert the native MNIST data format to PNG images.
 _Input arguments:_
 
 --image, -i: 
-		path to mnist image file
+		path to uncompressed mnist image file
 
 --label, -l: 
-		path to mnist label file
+		path uncompressed mnist label file
 
 --output, -o: 
 		path to a folder for saving the generated outputs

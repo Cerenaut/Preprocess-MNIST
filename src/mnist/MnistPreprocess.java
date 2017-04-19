@@ -44,6 +44,7 @@ public class MnistPreprocess {
         String showUsage;
         String entriesCountToBeProcessed;
 
+
         List< CLISimpleParser.ArgumentEntry > inputArguments = new ArrayList<>();
 
         // creating input argument entities
@@ -136,7 +137,7 @@ public class MnistPreprocess {
         // the very first argument to be extracted should be help argument. This is because if we have found it present,
         // then all we have to do is to pop the usage message up and then exit.
         showUsage = parsedArguments.get( showUsageArgument.getLongName() );
-        if (showUsage.equals( "true" )){
+        if (showUsage.equals( "true" ) || args.length == 0){
             System.out.println(getUsageMessage( GENERAL_USAGE_MESSAGE,inputArguments ));
             System.exit( 0 );
         }

@@ -49,7 +49,7 @@ public class MnistPreprocess {
         // creating input argument entities
 
         CLISimpleParser.ArgumentEntry imageArgument = new CLISimpleParser.ArgumentEntry( "i", "image",
-                "path to mnist image file", false, false, "", ( arg ) -> {
+                "path to uncompressed mnist image file", false, false, "", ( arg ) -> {
             if( !isFilenameValid( arg ) ) {
                 throw new RuntimeException( "Error! Invalid image file name. " + System.lineSeparator() );
 
@@ -58,13 +58,13 @@ public class MnistPreprocess {
             } else {
                 return true;
             }
-        } );
+        }, false );
 
         inputArguments.add( imageArgument );
 
 
         CLISimpleParser.ArgumentEntry labelArgument = new CLISimpleParser.ArgumentEntry( "l", "label",
-                "path to mnist label file", false, false, "", ( arg ) -> {
+                "path to uncompressed mnist label file", false, false, "", ( arg ) -> {
             if( !isFilenameValid( arg ) ) {
                 throw new RuntimeException( "Error! Invalid label file name. " + System.lineSeparator() );
 
@@ -73,7 +73,7 @@ public class MnistPreprocess {
             } else {
                 return true;
             }
-        } );
+        }, false );
 
         inputArguments.add( labelArgument );
 
@@ -86,7 +86,7 @@ public class MnistPreprocess {
                     } else {
                         return true;
                     }
-                } );
+                }, false );
 
         inputArguments.add( outputArgument );
 
@@ -97,7 +97,7 @@ public class MnistPreprocess {
             Boolean.valueOf( arg );
             return true;
 
-        } );
+        }, false );
 
         inputArguments.add( randomisedArgument );
 
@@ -108,18 +108,19 @@ public class MnistPreprocess {
 
             Integer.valueOf( arg );
             return true;
-        } );
+        }, false);
 
         inputArguments.add( numberArgument );
 
 
         CLISimpleParser.ArgumentEntry showUsageArgument = new CLISimpleParser.ArgumentEntry( "h", "help",
-                "show usage and help message", true, true, "false", ( arg ) -> {
+                "show this message", true, true, "false", ( arg ) -> {
             Boolean.valueOf( arg );
             return true;
-        } );
+        }, true);
 
         inputArguments.add( showUsageArgument );
+
 
 
         CLISimpleParser parser = new CLISimpleParser( inputArguments );
@@ -132,13 +133,19 @@ public class MnistPreprocess {
             return;
         }
 
+        // the very first argument to be extracted should be help argument. This is because if we have found it present,
+        // then all we have to do is to pop the usage message up and then exit.
+        showUsage = parsedArguments.get( showUsageArgument.getLongName() );
+        if (showUsage.equals( "true" )){
+            System.out.println(getUsageMessage( GENERAL_USAGE_MESSAGE,inputArguments ));
+            System.exit( 0 );
+        }
 
         imageFilePath = parsedArguments.get( imageArgument.getLongName() );
         labelFilePath = parsedArguments.get( labelArgument.getLongName() );
         outputFolderPath = parsedArguments.get( outputArgument.getLongName() );
         isRandomised = parsedArguments.get( randomisedArgument.getLongName() );
         entriesCountToBeProcessed = parsedArguments.get( numberArgument.getLongName() );
-        showUsage = parsedArguments.get( showUsageArgument.getLongName() );
 
         boolean isValidInputArguments = true;
 

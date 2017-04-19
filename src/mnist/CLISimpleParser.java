@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Created by:  Richard Masoumi
@@ -250,7 +251,19 @@ public class CLISimpleParser {
 
         }
 
-        if( missingArguments.size() != 0 ) {
+        // if a help-typed argument is present within the parsed arguments, we shouldn't complain about any missing
+        // arguments since we throw away every argument and just show the usage message.
+        List<ArgumentEntry> helpArguments = argumentEntries.stream().filter( argument -> argument.isHelp ).collect( Collectors.toList());
+        boolean isParsedHelpArgumentPresent = false;
+
+        for(ArgumentEntry helpArgument : helpArguments){
+            if (parsedArguments.containsKey( helpArgument.getLongName() )) {
+                isParsedHelpArgumentPresent = true;
+                break;
+            }
+        }
+
+        if( (missingArguments.size() != 0) && (!isParsedHelpArgumentPresent) ) {
             StringBuilder errorBuilder = new StringBuilder();
             errorBuilder.append( "You are missing the following expected input arguments: " + System.lineSeparator() + System.lineSeparator() );
 
@@ -279,7 +292,13 @@ public class CLISimpleParser {
         private String description;
         private boolean _isFlag;
         private boolean _isOptional;
+        private boolean isHelp;
         private Predicate< String > validationPredicate;
+
+        public boolean isHelp() {
+            return isHelp;
+        }
+
 
         public String getShortName() {
             return shortName;
@@ -322,8 +341,12 @@ public class CLISimpleParser {
          *                            associated to it
          * @param defaultValue        default value for the argument
          * @param validationPredicate validation rules for argument
+         * @param isHelp              determines this argument is used to show help/usage message. If set, all other
+         *                            arguments in the argument list are ignored and help/usage message is shown.
          */
-        public ArgumentEntry( String shortName, String longName, String description, boolean isOptional, boolean isFlag, String defaultValue, Predicate< String > validationPredicate ) {
+        public ArgumentEntry( String shortName, String longName, String description, boolean isOptional,
+                              boolean isFlag, String defaultValue, Predicate< String > validationPredicate,
+                              boolean isHelp) {
             this.shortName = shortName;
             this.longName = longName;
             this._isFlag = isFlag;
@@ -331,6 +354,7 @@ public class CLISimpleParser {
             this._isOptional = isOptional;
             this.description = description;
             this.validationPredicate = validationPredicate;
+            this.isHelp = isHelp;
         }
 
     }

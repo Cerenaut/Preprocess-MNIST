@@ -19,6 +19,9 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 
@@ -51,10 +54,16 @@ public class MnistPreprocess {
 
         CLISimpleParser.ArgumentEntry imageArgument = new CLISimpleParser.ArgumentEntry( "i", "image",
                 "path to uncompressed mnist image file", false, false, "", ( arg ) -> {
-            if( !isFilenameValid( arg ) ) {
-                throw new RuntimeException( "Error! Invalid image file name. " + System.lineSeparator() );
 
-            } else if( !MnistDataFile.isValidMnistFile( arg, true ) ) {
+            RuntimeException exception = genericFileDirectoryValidator( arg , false, false);
+
+            if (exception != null) {
+                throw exception;
+
+            }
+
+            // file name is valid, file itself exists, we do have read access, but the file is not a valid mnist image file
+            if( !MnistDataFile.isValidMnistFile( arg, true ) ) {
                 throw new RuntimeException( "Error! The image file seems to be invalid. Invalid magic number in mnist image file" + System.lineSeparator() );
             } else {
                 return true;
@@ -66,10 +75,16 @@ public class MnistPreprocess {
 
         CLISimpleParser.ArgumentEntry labelArgument = new CLISimpleParser.ArgumentEntry( "l", "label",
                 "path to uncompressed mnist label file", false, false, "", ( arg ) -> {
-            if( !isFilenameValid( arg ) ) {
-                throw new RuntimeException( "Error! Invalid label file name. " + System.lineSeparator() );
 
-            } else if( !MnistDataFile.isValidMnistFile( arg, false ) ) {
+            RuntimeException exception = genericFileDirectoryValidator( arg, false, false);
+
+            if (exception != null) {
+                throw exception;
+
+            }
+
+            // file name is valid, file itself exists, we do have read access, but the file is not a valid mnist label file
+            if( !MnistDataFile.isValidMnistFile( arg, false ) ) {
                 throw new RuntimeException( "Error! The label file seems to be invalid. Invalid magic number in mnist label file" + System.lineSeparator() );
             } else {
                 return true;
@@ -82,11 +97,15 @@ public class MnistPreprocess {
         CLISimpleParser.ArgumentEntry outputArgument = new CLISimpleParser.ArgumentEntry( "o", "output",
                 "path to a folder for saving the generated outputs", false, false, "",
                 ( arg ) -> {
-                    if( !isFilenameValid( arg ) ) {
-                        throw new RuntimeException( "Error! Invalid output folder name. " + System.lineSeparator() );
-                    } else {
-                        return true;
-                    }
+
+                            RuntimeException exception = genericFileDirectoryValidator( arg, true, true);
+
+                            if(exception != null){
+                                throw exception;
+                            }
+
+                            return true;
+
                 }, false );
 
         inputArguments.add( outputArgument );
@@ -179,7 +198,7 @@ public class MnistPreprocess {
 
         }
         catch( Exception e ) {
-            e.printStackTrace();
+            System.err.println(e.getMessage());
         }
 
     }
@@ -220,8 +239,9 @@ public class MnistPreprocess {
                 random = "_" + uuid.substring( 0, randomCharacters );
             }
 
-            String outputFileName = outputPath + random + "_" + label + "_" + labelCount.get( label ) + ".png";
-            File outputFile = new File( outputFileName ); // I removed the leading zero because there may be more needed so it becomes a malformed number
+            String outputFileName = random + "_" + label + "_" + labelCount.get( label ) + ".png";
+            Path outputFilePath = Paths.get( outputPath, outputFileName );
+            File outputFile = new File( outputFilePath.toString() ); // I removed the leading zero because there may be more needed so it becomes a malformed number
 
             try {
                 ImageIO.write( image, "png", outputFile );
@@ -266,6 +286,42 @@ public class MnistPreprocess {
         }
 
         return result;
+    }
+
+    private static RuntimeException genericFileDirectoryValidator( String path, boolean isDirectory, boolean requireWritePermission){
+        // bad file name
+        if( !isFilenameValid( path ) ) {
+            return new RuntimeException( "Error! Invalid image file name. " + System.lineSeparator() );
+
+            // file does not exists
+        } else if( !Files.exists( Paths.get(path))){
+            return new RuntimeException("provided input file \"" + path + "\" not found." + System.lineSeparator());
+
+            // file exists, but cannot be read
+        } else if( !Paths.get(path).toFile().canRead() && !requireWritePermission) {
+            return new RuntimeException( "\"" + path + "\" cannot be read. Do you have proper permission?" +
+                                        System.lineSeparator());
+        }
+
+        // write permission is needed
+        else if(requireWritePermission){
+            if(!Paths.get(path).toFile().canWrite()) {
+                return new RuntimeException("\"" +  path + "\" cannot be written. Do you have proper permission?" +
+                                            System.lineSeparator());
+            }
+        }
+
+        // check to see whether file or directory is needed
+        if(isDirectory) {
+            if (!Paths.get(path).toFile().isDirectory()) {
+                return new RuntimeException( "\"" + path + "\" is not a directory." + System.lineSeparator());
+
+            }
+        }
+
+        // as far as general file validation goes, everything is fine. Further, more specific validations
+        // should be done by the caller.
+        return null;
     }
 
 
